@@ -1,5 +1,5 @@
 function results = ocrBatch(regions, opts)
-%OCRBATCH  一次调用识别多块区域（批量 OCR），**这是省时的关键**。
+%OCRBATCH  一次调用识别多块区域（批量 OCR），这是省时的关键。
 %
 %   为什么单独成一个文件：它要被动图读取流程（readFigureLabels）和界面调用，
 %   作为公共入口比塞在 ocrBridge.m 里当局部函数更可靠。
@@ -9,7 +9,7 @@ function results = ocrBatch(regions, opts)
 %                        'binarize', {true,true,false});
 %       results = ocrBatch(regions)
 %
-%   每个 results(k).items 的坐标是**相对该区域左上角**的像素坐标，
+%   每个 results(k).items 的坐标是相对该区域左上角的像素坐标，
 %   调用方自行叠加偏移。
 %
 %   为什么必须批量：每起一个 PowerShell 进程要 0.3~0.5 s。一次标定/读标注
@@ -18,9 +18,9 @@ function results = ocrBatch(regions, opts)
 %
 %   依赖：tools/ocr_bridge.ps1（Windows 自带 OCR 引擎）。
 
-%OCRBRIDGEBATCH  一次调用识别多块区域，**大幅省时**。
+%OCRBRIDGEBATCH  一次调用识别多块区域，大幅省时。
 %
-%   为什么需要：每起一个 PowerShell 进程要 0.3~0.5 s。一次标定/读标注要
+%   用途：每起一个 PowerShell 进程要 0.3~0.5 s。一次标定/读标注要
 %   处理十几块区域，逐块调用就是十几个进程、几十秒；合并成一次调用后
 %   通常只需 2~5 秒。
 %
@@ -28,7 +28,7 @@ function results = ocrBatch(regions, opts)
 %       regions = struct('I', {I1,I2,I3}, 'scale', {5,5,4}, ...
 %                        'binarize', {true,true,false});
 %       results = ocrBridgeBatch(regions)
-%   每个 results(k).items 的坐标是**相对该区域左上角**的像素坐标，
+%   每个 results(k).items 的坐标是相对该区域左上角的像素坐标，
 %   调用方自行叠加偏移。
 
     if nargin < 2, opts = struct(); end
@@ -101,12 +101,12 @@ function results = ocrBatch(regions, opts)
     fprintf('  [ocrBatch] 完成，用时 %.1f s\n', toc(t0));
 end
 
-% =====================================================================
+%
 function o = cacheOpts(sc)
     o = struct('scale',sc, 'variants',false, 'pass2',false, 'minCharH',4);
 end
 
-% =====================================================================
+%
 function [G, scale] = prepForOcr(I, scale, doBin, maxDim)
 %PREPFOROCR  放大 + 可选二值化（纯 MATLAB）
     G0 = toGray(I);
@@ -128,7 +128,7 @@ function [G, scale] = prepForOcr(I, scale, doBin, maxDim)
     end
 end
 
-% =====================================================================
+%
 function rep = pickFileResult(filesOut, wantPath)
 %PICKFILERESULT  按路径匹配本次批处理返回的结果
     rep = [];
@@ -143,7 +143,7 @@ function rep = pickFileResult(filesOut, wantPath)
     rep = filesOut(1);
 end
 
-% =====================================================================
+%
 function j = runWindowsOcrBatch(files)
 %RUNWINDOWSOCRBATCH  一次 PowerShell 调用识别多个文件
     j = [];
@@ -171,7 +171,7 @@ function j = runWindowsOcrBatch(files)
     if ~isempty(j) && ~isfield(j,'engine'), j.engine = 'windows-ocr'; end
 end
 
-% =====================================================================
+%
 function j = runTesseractBatch(files) %#ok<INUSD>
 %RUNTESSERACTBATCH  未安装 tesseract 时返回空，保持接口一致
     j = [];
@@ -198,7 +198,7 @@ function items = flattenItems(j, scale)
     end
 end
 
-% =====================================================================
+%
 
 
 function G = toGray(I)
@@ -211,7 +211,7 @@ function G = toGray(I)
     end
 end
 
-% =====================================================================
+%
 
 
 function j = parseJsonBlock(out)
@@ -227,7 +227,7 @@ function j = parseJsonBlock(out)
     end
 end
 
-% =====================================================================
+%
 
 
 function exe = findPowerShell()

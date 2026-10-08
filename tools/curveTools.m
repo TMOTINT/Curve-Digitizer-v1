@@ -1,7 +1,7 @@
 function varargout = curveTools(op, varargin)
 %CURVETOOLS  论文曲线数字化：轴框识别 / 刻度标定 / 曲线追踪 / 导出
 %
-%   本文件是"函数库"，不直接运行；由 digitize_fig3.m 和 digitize_fig2E.m 调用。
+%   本文件是"函数库"，不直接运行；由界面和算法辅助函数调用。
 %
 %   本文件只用 MATLAB 基础功能，不依赖任何工具箱（已在 R2024a 上验证）。
 
@@ -17,16 +17,16 @@ switch lower(op)
 end
 end
 
-% =====================================================================
+%
 function ax = detectAxes(I)
 %DETECTAXES  自动找出坐标轴矩形框（实线判据 + 角点连通校验）。
 %
 %   ================== 为什么重写 ==================
-%   老版本判据是"投影值 >= 0.45×最大投影"，**分不出实线和虚线** ——
+%   老版本判据是"投影值 >= 0.45×最大投影"，分不出实线和虚线 ——
 %   实测 Fig.2E 里 y=0 那条水平虚线（横跨全宽的零线）投影值很高，
 %   被当成了轴框的横轴，于是标定基准整条错位（算出来 1 px = 100 nm）。
 %
-%   新判据抓的是"实线"的本质：**沿自身方向有很长的连续段**。
+%   新判据抓的是"实线"的本质：沿自身方向有很长的连续段。
 %     · 实线轴框：一条从这头连到那头的连续线（最长连续段 ≈ 全长）
 %     · 虚线/点线：最长连续段只有几像素（虽然总像素很多）
 %   实测同一张图上：横轴行 411-414 的最长连续段 = 82% 宽度；
@@ -90,7 +90,7 @@ function ax = detectAxes(I)
 
     % ---- 支持三种常见框型 ----
     %   ① 四条实线闭合的矩形（多数论文图）
-    %   ② "半开口"：只有 左轴 + 右轴 + 横轴，**没有上边框**
+    %   ② "半开口"：只有 左轴 + 右轴 + 横轴，没有上边框
     %      实测 Fig.2E 就是这种 —— 任何阈值下都找不到顶部横线，
     %      老版本要求"两条横线"于是拼不出框，直接回退成整幅图。
     %   ③ "L 形"：只有 左轴 + 横轴（matplotlib 默认的 2-spine 风格）
@@ -129,7 +129,7 @@ function ax = detectAxes(I)
                     if ok && sc > bestScore, bestScore = sc; ax = cand; end
                 elseif ~anyTall
                     % 退化情形：竖线一直连到图像顶边（上边框被裁掉了）。
-                    %   只有在**找不到任何合格竖线顶端**时才用这个兜底，
+                    %   只有在找不到任何合格竖线顶端时才用这个兜底，
                     %   否则会把本来正确的框拉成 top=1（实测在 3D 上踩过）。
                     cand = struct('rowTop', 1, 'rowBottom', rCent(a), ...
                                   'colLeft', cCent(c), 'colRight', cCent(d));
@@ -184,12 +184,12 @@ function ax = detectAxes(I)
                 '  ⚠ 上边界按图像顶边取值，请在预览里核对', ''));
 end
 
-% ---------------------------------------------------------------------
+%
 function s = ternStr(c, a, b)
     if c, s = a; else, s = b; end
 end
 
-% ---------------------------------------------------------------------
+%
 function [ok, score] = scoreFrame(ink, cand, H, W, strengths)
 %SCOREFRAME  给一个候选轴框打分：够大、长宽比合理、边线确是实线
     ok = false; score = -inf;
@@ -206,7 +206,7 @@ function [ok, score] = scoreFrame(ink, cand, H, W, strengths)
     ok = true;
 end
 
-% ---------------------------------------------------------------------
+%
 function rTop = topOfSpine(ink, c, rBottom)
 %TOPOFSPINE  竖线（y 轴）的顶端行 —— 半开口框的上边界就是它
 %   只接受"从横轴一路连上来的那一段"的起点，且必须离横轴足够远，
@@ -227,7 +227,7 @@ function rTop = topOfSpine(ink, c, rBottom)
     rTop = cand;
 end
 
-% ---------------------------------------------------------------------
+%
 function cRight = rightOfSpine(ink, r, cLeft)
 %RIGHTOFSPINE  横线（x 轴）的右端列 —— L 形框的右边界就是它
     cRight = NaN;
@@ -243,7 +243,7 @@ function cRight = rightOfSpine(ink, r, cLeft)
     cRight = cLeft + e0(keep(bi)) - 1;
 end
 
-% ---------------------------------------------------------------------
+%
 function tf = cornerHasInk(ink, r, c, rad)
 %CORNERHASINK  角点附近有没有墨迹（两条框线是否真的相交）
     r0 = max(1, r-rad); r1 = min(size(ink,1), r+rad);
@@ -251,13 +251,13 @@ function tf = cornerHasInk(ink, r, c, rad)
     tf = any(any(ink(r0:r1, c0:c1)));
 end
 
-% ---------------------------------------------------------------------
+%
 function tf = getDebug()
 %GETDEBUG  诊断开关：设环境变量 CURVETOOLS_DEBUG=1 打开
     tf = strcmp(getenv('CURVETOOLS_DEBUG'), '1');
 end
 
-% ---------------------------------------------------------------------
+%
 function f = longestRunFrac(v)
 %LONGESTRUNFRAC  一条线里"最长连续段"占该方向长度的比例
 %   实线接近 1，虚线只有几个像素 —— 这是区分两者的关键量。
@@ -268,7 +268,7 @@ function f = longestRunFrac(v)
     if isempty(s0), f = 0; else, f = max(e0 - s0 + 1) / numel(v); end
 end
 
-% ---------------------------------------------------------------------
+%
 function grp = groupConsecutiveWeighted(idx, w)
 %GROUPCONSECUTIVEWEIGHTED  把相邻下标并成一组，返回 {加权中心, 组内最大权重}
     grp = {};
@@ -284,7 +284,7 @@ function grp = groupConsecutiveWeighted(idx, w)
     end
 end
 
-% ---------------------------------------------------------------------
+%
 function tf = edgeReaches(ink, r, dir, lo, hi, frac)
 %EDGEREACHES  这条边是否真的延伸到对边的角上（防止页眉线与竖边拼出假框）
     if strcmp(dir, 'h')
@@ -298,7 +298,7 @@ function tf = edgeReaches(ink, r, dir, lo, hi, frac)
     tf = longestRunFrac(seg) >= frac * 0.6;   % 允许抗锯齿造成的少量缺口
 end
 
-% ---------------------------------------------------------------------
+%
 function centers = axisLines(proj, n)
 %AXISLINES  从投影曲线里找出候选框线的中心位置。
 %   判据：投影值 >= max(8, 0.45*最大值)，且至少占该方向长度的 25%。
@@ -313,7 +313,7 @@ function centers = axisLines(proj, n)
     centers = centers(:);
 end
 
-% ---------------------------------------------------------------------
+%
 function tf = linesConnect(dark, r, dir, lo, hi, frac)
 %LINESCONNECT  判断一条框线是否真的连到了它对边的角上。
 %   dark : 二值图
@@ -332,7 +332,7 @@ function tf = linesConnect(dark, r, dir, lo, hi, frac)
     tf = cov >= frac;
 end
 
-% ---------------------------------------------------------------------
+%
 function g = groupConsecutive(idx)
     if isempty(idx), g = {}; return; end
     brk = find(diff(idx) > 3);
@@ -341,7 +341,7 @@ function g = groupConsecutive(idx)
     g = arrayfun(@(k) (s(k):e(k))', 1:numel(s), 'UniformOutput', false);
 end
 
-% =====================================================================
+%
 function cal = calibrate(I, ax, xKnown, yKnown)
 %CALIBRATE  点选标定。
 %   xKnown = [v1 v2] 点的两个已知 X 值（任意两个刻度都行，距离越远越好）
@@ -401,7 +401,7 @@ function v = linearMap(p, p1, v1, p2, v2)
     v = v1 + (p - p1) * (v2 - v1) / (p2 - p1);
 end
 
-% =====================================================================
+%
 function [res, info] = traceCurve(I, ax, cal, seedXY, cfg)
 %TRACECURVE  从种子点出发沿曲线区域生长追踪。
 %   seedXY = [x y] 你点的一个曲线上的点（图像像素坐标）
@@ -557,7 +557,7 @@ function [res, info] = traceCurve(I, ax, cal, seedXY, cfg)
         info.nPts, numel(unique(path(:,1))), min(X), max(X), min(Y), max(Y));
 end
 
-% ---------------------------------------------------------------------
+%
 function m = colorMask(D, c, tol)
     dr = D(:,:,1) - c(1);
     dg = D(:,:,2) - c(2);
@@ -565,11 +565,11 @@ function m = colorMask(D, c, tol)
     m = (dr.^2 + dg.^2 + db.^2) <= tol^2;
 end
 
-% ---------------------------------------------------------------------
+%
 function [pt, col, moved] = snapSeedToCurve(I, xy, maxR)
 %SNAPSEEDTOCURVE  把用户点的种子点吸附到附近"确实是曲线"的像素上。
 %
-%   为什么需要：用户很难点得正好落在 2~3 px 宽的线上。如果种子落在白色
+%   用途：用户很难点得正好落在 2~3 px 宽的线上。如果种子落在白色
 %   背景上，按种子颜色建的掩膜会把整个背景都选进来，追踪立刻失效。
 %
 %   判据：像素要"明显不是背景"—— 即离白色的距离足够大（深色线）或
@@ -611,7 +611,7 @@ function [pt, col, moved] = snapSeedToCurve(I, xy, maxR)
     end
 end
 
-% ---------------------------------------------------------------------
+%
 function showImg(I)
 %SHOWIMG  显示图像（基础 MATLAB 实现，替代 imshow）
     image(I);
@@ -620,7 +620,7 @@ function showImg(I)
     set(gca, 'YDir', 'reverse');   % 与图像像素坐标一致：行号向下增大
 end
 
-% ---------------------------------------------------------------------
+%
 function m = dilate1(m)
 %DILATE1  3x3 二值膨胀（基础 MATLAB 实现，替代 imdilate）
     k = [1 1 1; 1 1 1; 1 1 1];
@@ -637,14 +637,14 @@ function m = cleanMask(m)
     m = dilate1(m);     % 再膨胀一次，补回因上一步收缩掉的细线
 end
 
-% =====================================================================
+%
 function [X, Y, bi] = reduceCurve(pathPx, cal, how)
 %REDUCECURVE  把逐像素路径归约成"单值曲线"：每个像素列只保留一个 Y。
 %
-%   必须传**像素路径** pathPx（N x 2，来自 trace 的 res.pathPx），
+%   必须传像素路径 pathPx（N x 2，来自 trace 的 res.pathPx），
 %   而不是数据坐标 —— 数据坐标取整会把整条曲线并成几个桶。
 %
-%   how='fit'（默认，最准）：对每个像素列，只取**与路径连通的那一段**
+%   how='fit'（默认，最准）：对每个像素列，只取与路径连通的那一段
 %       候选掩膜像素，用它们的质心作为该列的 Y。"连通段"的判定是：从路径
 %       中位行向上下扩展，遇到连续 >=3 行空白即停 —— 这样窗口不会跨到
 %       同一列里的另一条曲线上（多条曲线重叠时这一点很关键）。
@@ -736,7 +736,7 @@ function [X, Y, bi] = reduceCurve(pathPx, cal, how)
     end
 end
 
-% =====================================================================
+%
 function out = exportCurve(name, X, Y, meta)
 %EXPORTCURVE  导出 CSV + MAT，并附一带来源信息的 txt。
     if nargin < 4, meta = struct(); end
@@ -771,7 +771,7 @@ function v = getfielddef(s, f, d)
     if isfield(s, f) && ~isempty(s.(f)), v = s.(f); else, v = d; end
 end
 
-% =====================================================================
+%
 function overlayCheck(I, ax, cal, curves)
 %OVERLAYCHECK  验证：把数字化结果画回原图，并画出数据坐标下的结果。
 %   curves 是 struct 数组，字段 name / X / Y / path(可选)

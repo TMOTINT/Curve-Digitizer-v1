@@ -14,12 +14,12 @@ function info = readFigureLabels(I, ax, opts)
 %     info.notes      - 过程说明
 %
 %   设计说明：
-%     轴标签在图框**外面**，图例在图框**里面** —— 用这个位置关系区分，
+%     轴标签在图框外面，图例在图框里面 —— 用这个位置关系区分，
 %     比按字号区分可靠得多。竖直轴标签通常是旋转 90° 的，OCR 会把它拆成
 %     一堆竖排单词，这里按"词数>=3 且纵向跨度大"识别并合并。
 %
-%   ★ 性能设计：所有需要 OCR 的区域（刻度带、轴标题带、图例、图例里的
-%     逐行文字）先**收集起来**，最后用 ocrBatch **一次调用**识别完。
+%   性能设计：所有需要 OCR 的区域（刻度带、轴标题带、图例、图例里的
+%     逐行文字）先收集起来，最后用 ocrBatch 一次调用识别完。
 %     逐块调用会为每块起一个 PowerShell 进程，端到端要 1~2 分钟；
 %     合并后通常 3~8 秒。
 
@@ -120,12 +120,12 @@ function info = readFigureLabels(I, ax, opts)
     info.units = u;
 end
 
-% =====================================================================
+%
 function A = cropRect(I, r)
     A = I(max(1,r(2)):min(size(I,1),r(4)), max(1,r(1)):min(size(I,2),r(3)), :);
 end
 
-% =====================================================================
+%
 function items = ocrBand(I, band, opts)
 %OCRBAND  轴向标题带：优先逐行裁剪后高倍 OCR，失败则整带 OCR 兜底。
 %   两种方式各有适用场景（逐行适合小字、整带适合字号较大或排版紧凑的图），
@@ -140,7 +140,7 @@ function items = ocrBand(I, band, opts)
     end
 end
 
-% =====================================================================
+%
 function items = ocrBandPlain(I, band, opts)
 %OCRBANDPLAIN  直接把整条带裁下来 OCR（适合旋转 90° 的竖直标签）
     x0 = max(1, band(1)); y0 = max(1, band(2));
@@ -159,7 +159,7 @@ function items = ocrBandPlain(I, band, opts)
     end
 end
 
-% =====================================================================
+%
 function lab = buildAxisLabel(items, orient)
 %BUILDAXISLABEL  从图框附近的一堆词里挑出真正的轴标题，解析其单位。
 %   思路：轴标题是"一行/一列连续排列、字号相近"的词。先按行（或按列）聚类，
@@ -227,7 +227,7 @@ function lab = buildAxisLabel(items, orient)
     lab = dropTickText(lab);
 end
 
-% =====================================================================
+%
 function s = cleanupUnitText(s)
 %CLEANUPUNITTEXT  修正常见 OCR 误识，尤其是上下标
     if isempty(s), return; end
@@ -245,7 +245,7 @@ function s = cleanupUnitText(s)
     s = strtrim(s);
 end
 
-% =====================================================================
+%
 function lab = dropTickText(lab)
 %DROPTICKTEXT  如果拼出来的"标题"其实是刻度数字，就丢掉
     if isempty(lab.title), return; end
@@ -256,7 +256,7 @@ function lab = dropTickText(lab)
     end
 end
 
-% =====================================================================
+%
 function leg = matchLegend(boxes, colors, items)
 %MATCHLEGEND  把图例样本与它右侧/下方的文字对应起来
     leg = struct('name', {}, 'color', {}, 'box', {}, 'yCenter', {});

@@ -8,11 +8,11 @@ function cand = separateCurves(I, ax, opts)
 %     · colorCurves        只用颜色 -> 同色系多条被并成一条（还把颜色平均掉）
 %     · scanCurveCandidates 只用"几个位置的纵向分离" -> 一端汇聚时种子全落在汇聚点
 %     · scanBySlices       只用"最分开那一列的分离" -> 分离度不够时失效
-%   而曲线在图上其实是**二维**的：同一条曲线在每一列都是"一段连续的彩色像素"。
+%   而曲线在图上其实是二维的：同一条曲线在每一列都是"一段连续的彩色像素"。
 %   所以最贴问题的做法是：
 %     ① 每一列各自分层：把该列的彩色像素按行连通切成若干"带"；
 %     ② 跨列归组：把相邻列里"颜色接近 + 行位置接近"的带接成同一条曲线；
-%     ③ 每组给一个候选，种子取在**该组最靠中间、且带最薄**的那一列
+%     ③ 每组给一个候选，种子取在该组最靠中间、且带最薄的那一列
 %        （最薄 = 最不像多条曲线重叠处）。
 %   这样"纵向分离"和"颜色"两个线索都用上了，而且不依赖"某处一定分得开"。
 %
@@ -56,7 +56,7 @@ function cand = separateCurves(I, ax, opts)
     % ---------- ① 逐列分层 ----------
     %   cols{c} = struct array，每个元素是一条"带"：
     %     .row 带中心行  .color 带中位色  .n 像素数  .thick 厚度
-    %   ★ 用"整行取一列"的切片取色，不要用 sub2ind 逐像素索引 ——
+    %   用"整行取一列"的切片取色，不要用 sub2ind 逐像素索引 ——
     %     后者在 500 列 × 每列几十像素、还要乘 3 个通道时慢得离谱。
     cols = cell(1, W);
     for c = c0:c1
@@ -179,7 +179,7 @@ function cand = separateCurves(I, ax, opts)
     end
 end
 
-% =====================================================================
+%
 function groups = splitByColor(pix)
 %SPLITBYCOLOR  把一组像素按颜色分成 1~2 个子集（分不开就保持一组）
     n = size(pix, 1);
@@ -200,7 +200,7 @@ function groups = splitByColor(pix)
     groups = {find(idx==1), find(idx==2)};
 end
 
-% =====================================================================
+%
 function v = getf(s, f, d)
     if isstruct(s) && isfield(s, f) && ~isempty(s.(f)), v = s.(f); else, v = d; end
 end

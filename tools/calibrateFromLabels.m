@@ -1,13 +1,13 @@
 function out = calibrateFromLabels(I, ax, opts)
-%CALIBRATEFROMLABELS  用 OCR 读到的刻度数字**拟合**出坐标映射，并外推到轴框边界
+%CALIBRATEFROMLABELS  用 OCR 读到的刻度数字拟合出坐标映射，并外推到轴框边界
 %
-%   ==================== 为什么需要它 ====================
-%   很多图的**轴框比标注范围更大**：实测 Fig.3A 的 y 轴只标到 500，
+%   ==================== 用途它 ====================
+%   很多图的轴框比标注范围更大：实测 Fig.3A 的 y 轴只标到 500，
 %   但轴框顶边对应约 575 nm —— 肉眼看不出这个最大值，靠猜就会标定错。
 %
 %   做法（比"取最大标注值当上界"可靠得多）：
 %     1. OCR 读出每个刻度数字的文字 + 它的像素行/列中心
-%     2. 对"数值 ~ 像素位置"做**最小二乘直线拟合**（多个刻度一起平均，
+%     2. 对"数值 ~ 像素位置"做最小二乘直线拟合（多个刻度一起平均，
 %        抗单个误读；残差还能直接当质量指标）
 %     3. 把拟合直线外推到轴框的四条边，得到该框对应的真实数值范围
 %
@@ -40,7 +40,7 @@ function out = calibrateFromLabels(I, ax, opts)
     fh = ax.rowBottom - ax.rowTop;
 
     % ---- 两条标签带：X 在框下方，Y 在框左侧 ----
-    % ★ X 带要够高：刻度数字常常离框 10~30 px；带太矮会把数字下半截切掉，
+    % X 带要够高：刻度数字常常离框 10~30 px；带太矮会把数字下半截切掉，
     %   OCR 就一个字都读不出来（实测 30 px 高的带读到 0 项，加高后正常）。
     %   轴标题在更下面，靠 0.30 倍框高这个上限把它排除。
     xb = [max(1,round(ax.colLeft-0.06*fw)), min(H,round(ax.rowBottom+2)), ...
@@ -54,7 +54,7 @@ function out = calibrateFromLabels(I, ax, opts)
                      'scale', opts.scale, 'binarize', true);
     res = ocrBatch(regs, struct('useCache', false));
 
-    % ★ 坐标是**区域坐标**（ocrBatch 内部先裁了区域再识别），
+    % 坐标是区域坐标（ocrBatch 内部先裁了区域再识别），
     %   所以这里偏移一律给 0；再加一次偏移会把刻度位置整体挪走，
     %   导致归并错组（实测把 "200" 归成 "2000"）。
     [vx, px, tx] = itemsToTicks(res(1), 0, 0, 'x');
@@ -104,12 +104,12 @@ function out = calibrateFromLabels(I, ax, opts)
         numel(vx), out.xRes, numel(vy), out.yRes, xlim, ylim);
 end
 
-% ---------------------------------------------------------------------
+%
 function [v, pos, raw] = itemsToTicks(r, offX, offY, which)
 %ITEMSTOTICKS  把 OCR 结果整理成"数值 + 像素位置"
 %
-%   ★ Windows OCR 常把一个数拆成多个 token：实测 "0.2" 会被读成
-%     "0"、"."、"2" 三个词，各自带独立坐标。所以必须**先按位置归并**
+%   Windows OCR 常把一个数拆成多个 token：实测 "0.2" 会被读成
+%     "0"、"."、"2" 三个词，各自带独立坐标。所以必须先按位置归并
 %     （同一刻度的 token 彼此很近），再拼字符串转数值；
 %     否则会把 "0" 和 "2" 当成两个刻度，标定直接错。
     v = []; pos = []; raw = {};
@@ -156,7 +156,7 @@ function [v, pos, raw] = itemsToTicks(r, offX, offY, which)
     end
 end
 
-% ---------------------------------------------------------------------
+%
 function [cf, rms] = fitLine(px, val)
 %FITLINE  最小二乘拟合 值 = cf(1)*像素 + cf(2)
     X = [px(:), ones(numel(px),1)];

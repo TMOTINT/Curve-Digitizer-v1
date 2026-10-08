@@ -1,25 +1,9 @@
 function digitizer_app
-%DIGITIZER_APP  论文图曲线数字化工具 —— 图形界面主程序
-%
-%   ===== 入口：运行这一句 =====
-%       digitizer_app
-%
-%   界面（左控制 / 右预览，取点在预览区直接完成）：
-%       ┌──────────────────┬──────────────────────────────┐
-%       │ 1. 图片           │                              │
-%       │ 2. 坐标轴         │        图像预览               │
-%       │ 3. 数据系列       │   （点击取点、框选、叠加验证） │
-%       ├──────────────────┴──────────────────────────────┤
-%       │ 提示条：当前该做什么                            │
-%       └────────────────────────────────────────────────┘
-%
-%   设计要点（为什么不用 ginput / ROI）：
-%       本机没有 Image Processing Toolbox，drawpoint/drawrectangle/images.roi
-%       都不存在；而 uifigure 与 ginput/普通 figure 混用很脆弱。
-%       所以取点全部通过 uiaxes 的 ButtonDownFcn 直接读像素坐标实现，
-%       全程不离开同一个窗口，也不依赖任何工具箱。
-%
-%   依赖：MATLAB R2021a+（核心功能即可，无需工具箱）。
+%DIGITIZER_APP  曲线数字化图形界面。
+%   digitizer_app
+%   流程：载入单幅图片、确认轴框、标定、提取、叠加核对、导出。
+%   点击取点通过 uiaxes 事件完成。
+%   运行环境和功能限制见 README.md。
 
     here = fileparts(mfilename('fullpath'));
     % 自动切到本文件夹：用户不必先 cd。只有当当前目录里没有 data/ 时才切，
@@ -83,7 +67,7 @@ function digitizer_app
     lblCal.Layout.Row=3;
 
     % 卡片3 数据系列
-    % 注：已按需求**移除"读取图例名称与单位(OCR)"**这一步 —— 名称与单位
+    % 注：已按需求移除"读取图例名称与单位(OCR)"这一步 —— 名称与单位
     % 在导出时由用户手工填写（更可靠，也不再依赖 OCR）。
     p3 = uipanel(leftCol,'Title',' 3. 数据系列 ','FontSize',12,'FontWeight','bold');
     g3 = uigridlayout(p3,[5 1]); g3.RowHeight={26,26,18,26,110};
@@ -697,7 +681,7 @@ function digitizer_app
             % 为什么把锚点放在轴框的角上（而不是按刻度间距推）：
             % 轴框的范围就是用户在图上看到的范围，直接用它当锚点，
             % 不依赖"哪个刻度代表哪个数"的猜测，也不受自动量取误差影响。
-            % 刻度间距只做**自洽性核对**：对不上就提示用户核对输入。
+            % 刻度间距只做自洽性核对：对不上就提示用户核对输入。
             [orgCol, orgRow, spX, spY, jr] = detectOriginAndGrid(S.I, S.ax);
             hasOrg = isfinite(orgCol) && isfinite(orgRow);
 
@@ -721,7 +705,7 @@ function digitizer_app
             yHint = tern(isfinite(nCellY), sprintf('轴框内约 %.1f 格', nCellY), '格数未知');
 
             % ---- 右上角的两个值：先试着用 OCR 读刻度给默认值 ----
-            %   这是"肉眼无法判断最大值"的解法：很多图的**轴框比标注范围更大**
+            %   这是"肉眼无法判断最大值"的解法：很多图的轴框比标注范围更大
             %   （实测 Fig.3A 的 y 轴只标到 500，而轴框顶边对应约 575 nm）。
             %   程序读刻度数字 -> 最小二乘拟合 -> 外推到轴框边界，把结果填成
             %   默认值让你核对；读不出就留空（不阻断，照样能手填）。
@@ -789,7 +773,7 @@ function digitizer_app
             cal.originVal = [x0 y0];
             cal.cellRule = 'range';
             % ---- 自洽核对：角点算出的"每格数值" vs 自动量到的刻度间距 ----
-            % 这是最有力的一条检查：两条**完全独立**的路径算同一个量 ——
+            % 这是最有力的一条检查：两条完全独立的路径算同一个量 ——
             %   路径A：你填的两端值 ÷ 角点像素   -> 每格数值
             %   路径B：自动量到的"每格像素" × 路径A 的比例
             % 对得上（差异 < 4%）说明你填的范围与轴框边界一致；
@@ -853,7 +837,7 @@ function digitizer_app
     end
 
     function txt = sanityNote(perCellVal, axName, jrOne, detail)
-        %SANITYNOTE  核对"一格数值"是否合理，只在**确实有问题**时提示
+        %SANITYNOTE  核对"一格数值"是否合理，只在确实有问题时提示
         %
         %   三条判据（任一命中才提示）：
         %     · 一格像素与"另算的一格像素"差 2 倍以上 —— 典型的把半格当整格
@@ -1273,7 +1257,7 @@ function digitizer_app
                             % 参考图的轴框换成数值，再折算成用户图上的像素当量
                             dm = 0; ncmp = 0;
                             % 与参考在"数据坐标"上比（分辨率无关）。
-                            % 关键：不能按第 k 条对第 k 条 —— 两条链路的曲线**编号顺序可能不同**
+                            % 关键：不能按第 k 条对第 k 条 —— 两条链路的曲线编号顺序可能不同
                             % （汇聚区排序/合并差异），那样一比就是几十纳米的假偏差。
                             % 改为按"中位 Y 最接近"自动配对。
                             uy = (rg2(4)-rg2(3))/(fr2(2)-fr2(1));
@@ -1333,7 +1317,7 @@ function digitizer_app
                                 end
                                 say(sprintf('  自检明细（最大差 %0.2f px）:%s', dm, s),'info');
                             end
-                            % 判据用**中位差**：最大差会被个别陡沿/断点/误差棒处的单点拉爆，
+                            % 判据用中位差：最大差会被个别陡沿/断点/误差棒处的单点拉爆，
                             % 用它当门槛会误报（实测四对里三对差 <0.2 nm，最大差却有 97 px）。
                             if ncmp == 0
                                 say('⚠ 自检：没有可比对的点（曲线为空或全 NaN）—— 预览必然空白，请把日志发我','warn');
@@ -1705,7 +1689,7 @@ function digitizer_app
          '标定（只填图上的坐标范围）→ 分离曲线 → 预览验证 → 导出。']);
 end
 
-% =====================================================================
+%
 function I = toRGB(I)
 %TORGB  统一成三通道 uint8（去掉 alpha / 灰度复制 / 各类型归一化）。
 %   不用 im2uint8、不用 ndims：这两个在无工具箱环境下不稳妥。
@@ -1745,7 +1729,7 @@ function s = tern(c,a,b)
     if c, s = a; else, s = b; end
 end
 
-% =====================================================================
+%
 function [ok,medErr] = quickAlgoTest()
 %QUICKALGOTEST  合成已知曲线，走"追踪+归约"，比较中心线误差。
 %   真值是 round() 后的整数像素，本身含 ±0.5 量化误差，故阈值取 1.2 px。
@@ -1771,7 +1755,7 @@ function [ok,medErr] = quickAlgoTest()
     ok = (medErr<1.2) && size(rr,1)>400;
 end
 
-% =====================================================================
+%
 function n = writeOutputs(curves, lab, outPrefix, srcFile, cal, ax)
 %WRITEOUTPUTS  导出 CSV / Excel / MAT / provenance，返回生成文件数
     xT=ternStr(lab.axis.x.title,'X'); xU=ternStr(lab.axis.x.unit,'');

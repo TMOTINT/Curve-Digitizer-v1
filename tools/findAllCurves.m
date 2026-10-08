@@ -32,17 +32,17 @@ function cand = findAllCurves(I, ax, opts)
 %   ① classifyAndFilter：判"连续曲线 / 散点 / 碎片噪声"。
 %      实测过"线宽"判据没用 —— 混色像素又细又广（421 列、中位厚 2px），
 %      由圆点组成的真曲线反而很厚（中位 13px），厚度分不开真假。
-%      可靠的是**连续性**：真曲线几乎每列都有像素且相邻列连得上。
+%      可靠的是连续性：真曲线几乎每列都有像素且相邻列连得上。
 %      实测某面板的"红色"是碎片噪声：2079 像素分成 166 个块、面积中位 2px
 %      —— 它不是数据系列，是黑色曲线的抗锯齿边。
 %   ② filterBySpan：剔除"多条曲线混色拼出来的假候选"。
 %      假候选在每个采样位置都自洽，但整体是断开的。三条判据：
 %        · 有一条横贯轴框的长连通块（实线），或
-%        · 列覆盖并集够宽 **且** 覆盖列之间空隙很小（虚线的样子）
+%        · 列覆盖并集够宽 且 覆盖列之间空隙很小（虚线的样子）
 %        · 像素密度 = 像素数/覆盖列数 不能太低
 %      最后一条最灵：假候选跨 500 多列却只有 0.4 px/列（真曲线 0.7~0.8），
 %      因为它只是几条不同深浅曲线在个别列上的零碎混色。
-%   ③ 合并去重：颜色接近 **且** 位置接近才算同一条。
+%   ③ 合并去重：颜色接近 且 位置接近才算同一条。
 %      只按颜色合并会把"同色号的散点与拟合线"错误合并（位置分得很开）。
 %
 %   实测能力与边界：
@@ -131,7 +131,7 @@ function cand = findAllCurves(I, ax, opts)
     % ---------- 方法四：轴框端点取种子（专治"一端汇聚的曲线族"）----------
     %   实测 Fig.3D 的 9 档绿色 V 形族全部在 x≈0 汇聚，前三种方法给出的种子
     %   几乎都落在汇聚点 —— 那里多条曲线重合，DP 无从区分，只能提到一条。
-    %   在**分得最开的另一端**取种子，每个颜色-位置组合就唯一对应一条曲线。
+    %   在分得最开的另一端取种子，每个颜色-位置组合就唯一对应一条曲线。
     if ~isfield(opts,'useEdgeSeed') || opts.useEdgeSeed
         try
             o4 = struct('side', 'right');
@@ -151,7 +151,7 @@ function cand = findAllCurves(I, ax, opts)
     if isempty(cand), return; end
 
     % ---------- ⓪ 先剔除"图例样本"造成的假候选 ----------
-    %   为什么必须放在最前面：图例里的样本线（`—●—`）与真曲线**同色同线宽**，
+    %   为什么必须放在最前面：图例里的样本线（`—●—`）与真曲线同色同线宽，
     %   长度也够，任何按颜色/形状的判据都分不开它们。实测后果：
     %     · Fig.3C 实际只有 2 条曲线，却识别出 5 条（多出 2~3 个图例样本）；
     %     · Fig.3E 直接把图例当成了曲线。
@@ -229,11 +229,11 @@ function cand = findAllCurves(I, ax, opts)
     if dbg, dumpCand('③ 合并去重后', cand); end
 
     % ---------- ③b 抗锯齿晕归并 ----------
-    %   ★ 合成真值基准测试抓到的关键问题（这是"同一条曲线被拆成好几个候选"
-    %     的主因）：曲线核心色外圈有一圈抗锯齿晕，其颜色是**核心色与白底的
-    %     混合**（实测核心 [0 255 0] 的晕是 [179 255 179]）。两路候选源都会
+    %   合成真值基准测试抓到的关键问题（这是"同一条曲线被拆成好几个候选"
+    %     的主因）：曲线核心色外圈有一圈抗锯齿晕，其颜色是核心色与白底的
+    %     混合（实测核心 [0 255 0] 的晕是 [179 255 179]）。两路候选源都会
     %     把晕当成一条独立曲线报出来 —— 真值 3 条却报出 8 条。
-    %   判据：若候选 A 的颜色与候选 B **色相接近**（去掉灰度成分后差得不多），
+    %   判据：若候选 A 的颜色与候选 B 色相接近（去掉灰度成分后差得不多），
     %         而 A 的饱和度明显低于 B，且两者在图上位置相近，则 A 是 B 的晕，
     %         丢弃 A、只留 B（更饱和的那个才是曲线本身）。
     keep2 = true(1, numel(cand));
@@ -313,7 +313,7 @@ function cand = findAllCurves(I, ax, opts)
     cand = cand(o);
 end
 
-% =====================================================================
+%
 function dumpCand(label, cand)
 %DUMPCAND  诊断打印：候选的颜色 / 种子 / 像素数 / 来源
     fprintf('  [findAllCurves] %s：%d 条\n', label, numel(cand));
@@ -331,7 +331,7 @@ function dumpCand(label, cand)
     end
 end
 
-% =====================================================================
+%
 function cand = classifyAndFilter(cand, I, ax, opts)
 %CLASSIFYANDFILTER  判定每个候选是"连续曲线"还是"散点"，并剔除碎片噪声。
 %
@@ -384,8 +384,8 @@ function cand = classifyAndFilter(cand, I, ax, opts)
         looksLikeNoise   = medArea < opts.minBlobArea && nBlob > opts.maxScatterBlobs;
 
         % ---- 指标3：连通块"细长比" = 曲线 vs 散点/标记 ----
-        %   ★ 用户点出的问题："散点、曲线、标记点、虚线等互相影响"。
-        %     曲线是一条**又长又细**的连通块；圆点标记是"短而粗"的块；
+        %   用户点出的问题："散点、曲线、标记点、虚线等互相影响"。
+        %     曲线是一条又长又细的连通块；圆点标记是"短而粗"的块；
         %     散点是许多互不相连的小块。用最大块的"长/厚"比就能分开：
         %       曲线     -> 长/厚 很大（几十以上）
         %       圆点标记 -> 长/厚 接近 1
@@ -394,7 +394,7 @@ function cand = classifyAndFilter(cand, I, ax, opts)
 
         % ---- 指标4：虚线判据（空列是否"等间隔周期性"）----
         %   实测：虚线（参考线、onset 标记线）与曲线一样细、一样直，
-        %   唯一区别是**空列周期性出现**。真曲线也可能有空洞，但空洞位置
+        %   唯一区别是空列周期性出现。真曲线也可能有空洞，但空洞位置
         %   是随机的、不会等间隔。所以：空列数够多且间隔的离散度很小时，
         %   判为虚线。
         isDashed = false;
@@ -425,7 +425,7 @@ function cand = classifyAndFilter(cand, I, ax, opts)
     cand = cand(keep);
 end
 
-% =====================================================================
+%
 function [nLinked, nGap] = linkColumns(ms, seed, c0, r0, opts)
 %LINKCOLUMNS  从种子出发逐列推进，统计连出的列数与空列数
     nLinked = 0; nGap = 0;
@@ -462,7 +462,7 @@ function [nLinked, nGap] = linkColumns(ms, seed, c0, r0, opts)
     end
 end
 
-% =====================================================================
+%
 function e = elongOfLargest(m)
 %ELONGOFLARGEST  最大连通块的"长/厚"比（曲线很大，圆点标记 ≈ 1）
 %   曲线：跨几百列、每列 2~5 px 厚 -> e 很大（几十以上）；
@@ -479,7 +479,7 @@ function e = elongOfLargest(m)
     e = lenC / lenR;
 end
 
-% =====================================================================
+%
 function bb = largestBlobBox(m)
 %LARGESTBLOBBOX  面积最大的连通块的包围盒 [c0 c1 r0 r1]（游程 + 并查集）
     bb = [];
@@ -535,7 +535,7 @@ function bb = largestBlobBox(m)
     end
 end
 
-% =====================================================================
+%
 function r = findRootLocal(parent, k)
     if isempty(parent) || k < 1 || k > numel(parent), r = k; return; end
     r = k;
@@ -544,7 +544,7 @@ function r = findRootLocal(parent, k)
     end
 end
 
-% =====================================================================
+%
 function gaps = gapPositions(m, seed, c0, r0, opts)
 %GAPPOSITIONS  沿曲线推进，记录"空列"的列号（用于判断虚线）
     gaps = [];
@@ -580,7 +580,7 @@ function gaps = gapPositions(m, seed, c0, r0, opts)
     end
 end
 
-% =====================================================================
+%
 function [nBlob, medArea, maxArea] = blobStats(m)
 %BLOBSTATS  连通块统计（4 邻域，游程 + 并查集，不用工具箱）
     nBlob = 0; medArea = 0; maxArea = 0;
@@ -635,7 +635,7 @@ function r = root(parent, x)
     while parent(r) ~= r, r = parent(r); end
 end
 
-% =====================================================================
+%
 function cand = filterBySpan(cand, I, ax, opts)
 %FILTERBYSPAN  剔除"由多条曲线混色拼出来"的假候选。
 %
@@ -645,7 +645,7 @@ function cand = filterBySpan(cand, I, ax, opts)
 %     · 有一条横贯轴框的长连通块（实线）；
 %     · 所有块的列覆盖并集很宽，且相邻覆盖列之间的最大空隙很小
 %       （虚线：一段一段，但段与段挨得近）。
-%   再加一条最灵的判据：**像素密度 = 像素数 / 覆盖列数**。
+%   再加一条最灵的判据：像素密度 = 像素数 / 覆盖列数。
 %   实测 Fig.3A 的假候选（RGB[68 196 68]，3831 px）跨 500 多列却只有
 %   0.4 px/列，而真曲线是 0.7~0.8 px/列 —— 因为它只是几条不同深浅曲线在
 %   个别列上的零碎混色，并不真的沿着某一条线走。
@@ -675,7 +675,7 @@ function cand = filterBySpan(cand, I, ax, opts)
     cand = cand(keep);
 end
 
-% =====================================================================
+%
 function [span, unionSpan, gapMax, nCover] = spanStats(m)
 %SPANSTATS  连通块的横向跨度、列覆盖并集、最大空隙、覆盖列数
     [H, W] = size(m);
@@ -736,7 +736,7 @@ function [span, unionSpan, gapMax, nCover] = spanStats(m)
     end
 end
 
-% =====================================================================
+%
 function yc = pickNear(colMask, yRef, r0)
 %PICKNEAR  在该列掩膜里取"离 yRef 最近的簇"的中心行
     yc = [];

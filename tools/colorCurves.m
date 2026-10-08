@@ -101,7 +101,7 @@ function cand = colorCurves(I, ax, opts)
     end
 
     % ---- 同色系多曲线：靠"端部列"数出有几条 ----
-    % 论文里同色不同深浅的多条曲线（如 7 档绿）在明度上往往是**连续分布**，
+    % 论文里同色不同深浅的多条曲线（如 7 档绿）在明度上往往是连续分布，
     % 直方图没有可分峰，按明度分层行不通。
     % 但它们通常在左端或右端是彼此分开的 —— 直接数端部列里有几簇同色像素，
     % 每簇就是一个种子点。这是人看图的方式，稳定得多。
@@ -123,13 +123,13 @@ function cand = colorCurves(I, ax, opts)
     % 论文图里"同一色相、不同深浅"的多条曲线（如 Fig.3A 的 9 档绿）
     % 色相完全一样，只按色相聚类就会把整个色系并成一条 —— 表现为
     % "自动分离不准确 / 条数少了好几条"。
-    % 新判据：**色相接近 且 深浅（1-明度）接近** 才算同一条曲线。
+    % 新判据：色相接近 且 深浅（1-明度）接近 才算同一条曲线。
     % 抗锯齿造成的多个色阶深浅差很小（< ~25），会被合并；
     % 不同条件曲线的深浅差通常 ≥ 50，会被保留。
     cand = mergeShadeFamily(cand, opts.shadeKeep);
 end
 
-% =====================================================================
+%
 function col = colorShade(col)
 %COLORSHADE  颜色的"深浅"标量：0=最亮，1=最暗（白 0、纯绿 0.5、黑 1）
     col = double(col);
@@ -139,7 +139,7 @@ function col = colorShade(col)
     col = (1 - c) * dk + c * dk * 0.5;
 end
 
-% =====================================================================
+%
 function cand = mergeShadeFamily(cand, shadeKeep)
 %MERGESHADEFAMILY  同一色相+同一深浅 -> 合并；同色相不同深浅 -> 各自保留
     if nargin < 2 || isempty(shadeKeep), shadeKeep = 25; end
@@ -197,7 +197,7 @@ function r = findRoot(parent, x)
     while parent(r) ~= r, r = parent(r); end
 end
 
-% =====================================================================
+%
 function cand = splitByShade(D, sub, ax, maskC, R, G, B, lum, cand, opts)
 %SPLITBYSHADE  把"同色相但深浅不同"的多条曲线拆开。
 %
@@ -310,14 +310,14 @@ function h = rgbHueLocal(col)
     h = h/6; if h < 0, h = h + 1; end
 end
 
-% =====================================================================
+%
 function extra = seedsFromEdges(sub, ax, R, G, B, lum, cand, opts)
 %SEEDSFROMEDGES  扫描多个横向位置，数出"同色系"曲线各有几条并给出种子点。
 %
-%   为什么不能只看端部：论文图里同色系曲线常在**两端汇聚**（都从 0 出发、
+%   为什么不能只看端部：论文图里同色系曲线常在两端汇聚（都从 0 出发、
 %   或都收敛到平台），端部只看得到一条；而中段往往分得很开。
 %   实测某面板：2% 处 0 簇、25% 处 5 簇、50% 处 6 簇、97% 处 0 簇。
-%   所以做法是**扫多个位置**，把各位置数到的簇汇总后去重。
+%   所以做法是扫多个位置，把各位置数到的簇汇总后去重。
 %
 %   这条路径专门解决"同色相、只靠颜色分不开"的多曲线问题。
 
@@ -405,15 +405,15 @@ function tf = tooCloseLocal(col, list, tol)
     end
 end
 
-% =====================================================================
+%
 function tf = covered(col, mask, R, G, B, cand) %#ok<INUSD>
 %COVERED  预留：该簇是否已被现有候选覆盖
     tf = false;
 end
 
-% =====================================================================
+%
 function cand = mergeColors(cand, tolHue)
-%MERGECOLORS  按**色相**把颜色相近的候选合并成一簇。
+%MERGECOLORS  按色相把颜色相近的候选合并成一簇。
 %
 %   为什么不按 RGB 欧氏距离：抗锯齿会在一条曲线周围产生深浅不一的色阶
 %   （深蓝 0,0,128 / 中蓝 55,55,205 / 浅蓝 183,183,237），它们在 RGB 空间
@@ -458,7 +458,7 @@ function cand = mergeColors(cand, tolHue)
     cand = out(o);
 end
 
-% =====================================================================
+%
 function [h, s] = rgbHue(col)
 %RGBHUE  计算色相（0~1）与饱和度（0~1，定义为 (mx-mn)/mx）
     c = double(col) / 255;
@@ -475,7 +475,7 @@ function [h, s] = rgbHue(col)
     if h < 0, h = h + 1; end
 end
 
-% =====================================================================
+%
 function tf = tooClose(col, cand, tol)
     tf = false;
     for k = 1:numel(cand)
@@ -483,7 +483,7 @@ function tf = tooClose(col, cand, tol)
     end
 end
 
-% =====================================================================
+%
 function [seed, yMean] = pickSeed(m, r0, c0)
 %PICKSEED  在该颜色的像素里挑一个"离其他颜色最远"的点当种子。
 %   直觉：交叉/重叠处颜色会混，选孤立处的点追踪最不容易跑偏。

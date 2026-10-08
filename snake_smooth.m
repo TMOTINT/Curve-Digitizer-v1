@@ -4,7 +4,7 @@ function [ys, info] = snake_smooth(cs, y0, I, opt)
 %
 %   能量 = Σ w_c·ρ(y_c − m_c)  +  λ·Σ (Δ²y_c)²
 %     m_c = 当前路径附近墨迹的加权重心
-%     w_c = 墨量置信度 × **厚度置信度**
+%     w_c = 墨量置信度 × 厚度置信度
 %     ρ   = Tukey 双权（IRLS）——钩子/尖刺这类粗差权重压到 0
 %     λ   = 偏差原则自动选：在所有满足"内点加权残差 RMS ≤ 目标"的 λ 里取最大
 %
@@ -56,7 +56,7 @@ for it = 1:iters
 end
 end
 
-% ----------------------------------------------------------------------
+%
 function [m, w] = measure(V, cs, ys, win, wLine)
 n = numel(cs); m = ys(:); w = zeros(n,1); H = size(V,1);
 for q = 1:n

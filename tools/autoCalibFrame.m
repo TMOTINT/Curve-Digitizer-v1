@@ -10,7 +10,7 @@ function cal = autoCalibFrame(I, ax, opts)
 %     cal.confidence             0~1，越高越可信
 %
 %   ---- 三级策略（从可靠到兜底）----
-%   1) ocr+ransac：读轴框外的刻度数字，用 RANSAC 找出**等差一致**的那一组
+%   1) ocr+ransac：读轴框外的刻度数字，用 RANSAC 找出等差一致的那一组
 %      （位置与数值严格线性），自动剔除图例文字、轴标题等混入的词。
 %      这是最可靠的一级。
 %   2) ticks：读不到数字时，检测轴框内侧的刻度线位置，用其等差间隔
@@ -82,7 +82,7 @@ function cal = autoCalibFrame(I, ax, opts)
     end
 end
 
-% =====================================================================
+%
 function it = offsetItems(it, band)
     for k = 1:numel(it)
         it(k).x = it(k).x + band(1) - 1;
@@ -90,7 +90,7 @@ function it = offsetItems(it, band)
     end
 end
 
-% =====================================================================
+%
 function [pos, val] = numbersFromItems(items, dir)
 %NUMBERSFROMITEMS  取出"看起来是刻度数字"的词
     pos = []; val = [];
@@ -111,7 +111,7 @@ function [pos, val] = numbersFromItems(items, dir)
     end
 end
 
-% =====================================================================
+%
 function [ok, p, conf] = fitSteps(pos, val)
 %FITSTEPS  用 RANSAC 找出"位置与数值严格线性"的那一组点。
 %   刻度数字满足：位置均匀分布、数值等差。图例里的数字（0.09、1.2、10^6）
@@ -159,7 +159,7 @@ function [ok, p, conf] = fitSteps(pos, val)
     end
 end
 
-% =====================================================================
+%
 function tf = validCal(cal)
 %VALIDCAL  标定结果的基本合理性检查
     tf = false;

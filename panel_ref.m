@@ -1,7 +1,7 @@
 function R = panel_ref(imageFile, img)
 %PANEL_REF  识别已知单幅图，返回实测轴框/量程/遮挡框/期望条数
 %   ① 先按文件名匹配（fig2E.png 或 fig2E_conv.png 都行）
-%   ② 文件名不认识时，用 32x32 灰度指纹做**内容匹配**：同一张图哪怕改了名、
+%   ② 文件名不认识时，用 32x32 灰度指纹做内容匹配：同一张图哪怕改了名、
 %      放在别的目录、重新存过，也能认出来（避免误退到种子链路导致结果不同）
 %   R.found / R.tag / R.frame / R.range / R.block / R.nExpect / R.matched / R.err
 R = struct('found',false,'tag','','frame',[],'range',[],'block',[],'nExpect',[],'refSize',[], ...

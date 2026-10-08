@@ -1,7 +1,7 @@
 function [X, Y, info] = extractByColumns(I, ax, cal, seeds, opts)
 %EXTRACTBYCOLUMNS  按列直接测量曲线（比区域生长追踪准得多、也快得多）。
 %
-%   ★ 为什么换掉"追踪"：
+%   为什么换掉"追踪"：
 %   实测对比过两条独立途径取同一条曲线：
 %       区域生长追踪  ->  141 点，且与逐列测量中位差 69.8 px（占满量程 20%）
 %       逐列测量      ->  427 点（该有 427 列），稳定
@@ -30,7 +30,7 @@ function [X, Y, info] = extractByColumns(I, ax, cal, seeds, opts)
     % 一列跨十几像素很正常；容差给死了就会把陡峭段整段丢掉（实测过）。
     if ~isfield(opts,'maxJump'),  opts.maxJump = 28;   end
     if ~isfield(opts,'minPix'),   opts.minPix = 1;     end
-    % ★ lineOnly：只取"线"，剔除散点标记与点画符号。默认开启。
+    % lineOnly：只取"线"，剔除散点标记与点画符号。默认开启。
     %   判据是"连续趋势"，不是线宽 —— 实测线宽分不开（标记点的短横线
     %   和曲线一样细）。分不开的重叠段用曲线拟合补回来。
     if ~isfield(opts,'lineOnly'), opts.lineOnly = true; end
@@ -162,7 +162,7 @@ function [X, Y, info] = extractByColumns(I, ax, cal, seeds, opts)
     end
 end
 
-% =====================================================================
+%
 function yc = pickCluster(colMask, yRef, r0, minPix)
 %PICKCLUSTER  在某一列的掩膜里，取"离 yRef 最近的那一簇"的中心行。
 %   这是保证不跳线的关键：只在参照位置附近的簇里选，而不是取全局中心。

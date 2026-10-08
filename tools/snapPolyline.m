@@ -1,10 +1,10 @@
 function [X, Y, info] = snapPolyline(I, ax, cal, pts, opts)
 %SNAPPOLYLINE  把用户"随手画的折线"吸附到真实曲线上（手描 + activecontour）
 %
-%   ==================== 为什么需要这条路 ====================
+%   ==================== 用途这条路 ====================
 %   遇到"同色系 + 谷底挤成一团 + 互相交叉"的曲线族（实测 Fig.3D 就是），
 %   纯自动方法无法可靠分辨：颜色一样、位置只差 2~3 px。
-%   这时最可靠的是**人给拓扑、算法给精度**：
+%   这时最可靠的是人给拓扑、算法给精度：
 %     1) 用户在图上沿曲线随手画几笔（不必精确，差十几个像素都行）
 %     2) 在折线周围的窄带里跑 activecontour，让它自己吸到线的中心
 %     3) 再取亚像素重心输出
@@ -17,7 +17,7 @@ function [X, Y, info] = snapPolyline(I, ax, cal, pts, opts)
 %            smooth    平滑项（默认 1.2）
 %            verbose   打印过程
 %
-%   需要 Image Processing Toolbox 的 activecontour（本机已确认可用）。
+%   需要 Image Processing Toolbox 的 activecontour。
 %   没有 IPT 时退化为"折线 + 三次样条"，仍然可用，精度略低。
 
     if nargin < 5, opts = struct(); end
@@ -121,7 +121,7 @@ function [X, Y, info] = snapPolyline(I, ax, cal, pts, opts)
     end
 end
 
-% ---------------------------------------------------------------------
+%
 function [xc, yc] = densifyPath(P)
 %DENSIFYPATH  把折线按 1 px 间隔加密
     xc = []; yc = [];

@@ -1,7 +1,7 @@
 function [yg, inl] = robustLowess(x, y, span, opts)
 %ROBUSTLOWESS  稳健局部加权回归（LOWESS / LOESS 的稳健版本）。
 %
-%   ★ 为什么用它替代全局多项式：
+%   采用它替代全局多项式：
 %   全局多项式（polyfit）是"一个模型管全区"，只要有局部污染（标记点、
 %   误差棒、图例样本线）就会把整条曲线带偏 —— 实测与数据点的偏差中位
 %   达 63 nm、最大 88 nm。
@@ -101,7 +101,7 @@ function [yg, inl] = robustLowess(x, y, span, opts)
     inl(ok) = tmp;
 end
 
-% =====================================================================
+%
 function y0 = localFit(x, y, w, x0, deg)
 %LOCALFIT  加权局部多项式在 x0 处的取值（手写加权最小二乘，避免依赖）
     if deg >= 2

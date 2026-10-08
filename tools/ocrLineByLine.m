@@ -1,7 +1,7 @@
 function items = ocrLineByLine(I, band, opts)
 %OCRLINEBYLINE  把一块区域先切成"文字行"，再逐行放大 OCR。
 %
-%   为什么需要：整块区域一次性 OCR 时，引擎会按自己的版面分析切块，
+%   用途：整块区域一次性 OCR 时，引擎会按自己的版面分析切块，
 %   图例里"样本 + 文字"混在一起时经常只认到半行。而把每一行文字单独
 %   裁出来、高倍放大再识别，准确率高得多 —— 相当于人手一个个去看。
 %
@@ -89,7 +89,7 @@ function items = ocrLineByLine(I, band, opts)
     end
 end
 
-% =====================================================================
+%
 function [boxes, cols] = blobs(mask)
 %BLOBS  连通域包围盒（8 邻域，游程 + 并查集）。cols 未用，保持接口一致。
     [H, ~] = size(mask);

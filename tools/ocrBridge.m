@@ -1,7 +1,7 @@
 function res = ocrBridge(I, opts)
 %OCRBRIDGE  识别图像中的文字（OCR），返回文字内容及其在图像中的位置。
 %
-%   为什么需要：论文图里通常有必须一起提取的信息 ——
+%   用途：论文图里通常有必须一起提取的信息 ——
 %     * 坐标轴名称与单位（"Time after stimulus onset (s)"、"OPL (nm)"）
 %     * 图例里的曲线名称（"Subject 1"、"L/M-cones"、"0.09 (1.2)" 等）
 %   有了它们，导出的数据才能自动带上列名和单位。
@@ -11,7 +11,7 @@ function res = ocrBridge(I, opts)
 %       res = ocrBridge(I, struct('scale', 8))
 %
 %   返回 res：
-%       res.items  - 结构体数组，字段 text/x/y/w/h（**原始图像像素坐标**）
+%       res.items  - 结构体数组，字段 text/x/y/w/h（原始图像像素坐标）
 %       res.lines  - cell 数组，每格是一行文字的拼接结果
 %       res.engine - 'windows-ocr' | 'tesseract' | 'none'
 %       res.scale  - 实际使用的放大倍数
@@ -162,7 +162,7 @@ function res = ocrBridge(I, opts)
     end
 end
 
-% =====================================================================
+%
 function items = dropCJK(items)
 %DROPCJK  丢掉纯中日韩字符的"词"（中文 OCR 引擎对曲线噪声的典型误识别）
     if isempty(items), return; end
@@ -181,7 +181,7 @@ function items = dropCJK(items)
     items = items(keep);
 end
 
-% =====================================================================
+%
 function files = buildVariants(G, multi, tmpDir)
 %BUILDVARIANTS  生成几种预处理版本，写成 png，返回路径
     h = histcounts(G(:), 0:256);
@@ -211,7 +211,7 @@ function files = buildVariants(G, multi, tmpDir)
     end
 end
 
-% =====================================================================
+%
 function extra = ocrByTiles(G0, baseScale, opts, tmpDir)
 %OCRTILES  把图切块、每块放大后 OCR，专治小字
     extra = struct('text', {}, 'x', {}, 'y', {}, 'w', {}, 'h', {});
@@ -264,7 +264,7 @@ function extra = ocrByTiles(G0, baseScale, opts, tmpDir)
     end
 end
 
-% =====================================================================
+%
 function [j, eng, lg] = ocrOneFile(png)
 %OCRONEFILE  对一个文件依次尝试 Windows OCR、tesseract
     j = []; eng = ''; lg = '';
@@ -280,7 +280,7 @@ function [j, eng, lg] = ocrOneFile(png)
     end
 end
 
-% =====================================================================
+%
 function items = flattenItems(j, scale)
 %FLATTENITEMS  把某次 OCR 的结果摊平成 items（坐标除以缩放倍数回到原图）
     items = struct('text', {}, 'x', {}, 'y', {}, 'w', {}, 'h', {});
@@ -301,7 +301,7 @@ function items = flattenItems(j, scale)
     end
 end
 
-% =====================================================================
+%
 function items = dedupItems(items)
 %DEDUPITEMS  去掉重复识别（位置几乎相同 + 文字相同/极相似）
     if numel(items) < 2, return; end
@@ -345,7 +345,7 @@ function d = editDist(a, b)
     d = prev(nb+1);
 end
 
-% =====================================================================
+%
 function lines = groupLines(items)
 %GROUPLINES  把词按"同一行"分组（y 相近且水平相邻），拼成整行文字
     lines = {};
@@ -379,7 +379,7 @@ function lines = groupLines(items)
     end
 end
 
-% =====================================================================
+%
 function G = toGray(I)
 %TOGRAY  转灰度 double（兼容灰度/RGB/RGBA 输入）
     if ismatrix(I) && size(I,3) == 1
@@ -390,7 +390,7 @@ function G = toGray(I)
     end
 end
 
-% =====================================================================
+%
 function j = runWindowsOcr(pngPath)
 %RUNWINDOWSOCR  用 Windows 自带 OCR 引擎识别（由 ocr_bridge.ps1 完成）
     j = [];
@@ -420,7 +420,7 @@ function j = runWindowsOcr(pngPath)
     if ~isempty(j) && ~isfield(j,'engine'), j.engine = 'windows-ocr'; end
 end
 
-% =====================================================================
+%
 function j = runTesseract(pngPath)
 %RUNTESSERACT  退化方案：用 tesseract（如果装了就顺手用）
     j = [];
@@ -450,7 +450,7 @@ function j = runTesseract(pngPath)
     j = struct('engine', 'tesseract', 'lang', 'eng', 'lines', {rows});
 end
 
-% =====================================================================
+%
 function j = parseJsonBlock(out)
     j = [];
     b = strfind(out, 'OCR_JSON_BEGIN');
@@ -464,7 +464,7 @@ function j = parseJsonBlock(out)
     end
 end
 
-% =====================================================================
+%
 function exe = findPowerShell()
     exe = '';
     cands = {fullfile(getenv('SystemRoot'), 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'), ...

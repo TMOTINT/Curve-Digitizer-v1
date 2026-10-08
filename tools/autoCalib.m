@@ -5,12 +5,12 @@ function S = autoCalib(I, varargin)
 %   S = autoCalib(I, 'xStep', 0.2, 'yStep', 50)     % 已知"一格"的值
 %
 %   ==================== 思路（利用图上清晰的刻度）====================
-%   ① 找轴框：整图里找**最长**的横线段与竖线段，成对的长线就是四条轴脊。
+%   ① 找轴框：整图里找最长的横线段与竖线段，成对的长线就是四条轴脊。
 %      这两张图的轴框都是完整矩形，所以取"最长的 2 条横线 + 最长的 2 条竖线"。
-%   ② 找刻度：轴脊**内侧**的短横/短竖段（刻度是朝内画的），长度 5~40 px；
+%   ② 找刻度：轴脊内侧的短横/短竖段（刻度是朝内画的），长度 5~40 px；
 %      合并相邻 2 px 内的重复（抗锯齿会把一条刻线测成 2~3 行）。
 %   ③ 定标注值：刻度通常是等差数列，间距 d_px 对应标注步长 v。
-%      用户只需给出**一个标注步长**（例如 x 每 0.2 一格、y 每 50 一格），
+%      用户只需给出一个标注步长（例如 x 每 0.2 一格、y 每 50 一格），
 %      程序把刻度序号拟合成 value = v*(k - k0) + value0，再用轴框四边反推范围。
 %      若不给步长，就只返回像素几何，由调用方决定。
 %
@@ -72,7 +72,7 @@ function S = autoCalib(I, varargin)
     end
 end
 
-% =====================================================================
+%
 function [fr, info] = longestLines(dark, H, W)
 %LONGESTLINES  取最长的 2 条横线与最长的 2 条竖线作为轴框
     fr = [NaN NaN NaN NaN]; info = struct();
@@ -102,12 +102,12 @@ function [fr, info] = longestLines(dark, H, W)
     [fr(3), fr(4)] = pickTwo(candC, colSeg, colLen);
 end
 
-% =====================================================================
+%
 function [a, b] = pickTwo(cand, seg, len)
 %PICKTWO  从候选里取轴框的两条对边
 %
-%   ★ 踩过的坑：粗线（2~3 px）会被测成相邻的 2~3 行，直接取"最上/最下"
-%     会得到**同一条线的上下沿**（实测返回 rows 263..264，跨度 2 px）。
+%   踩过的坑：粗线（2~3 px）会被测成相邻的 2~3 行，直接取"最上/最下"
+%     会得到同一条线的上下沿（实测返回 rows 263..264，跨度 2 px）。
 %   做法：先把相距 <= 3 px 的候选合并成一条（取中心），再取最外两条。
     a = NaN; b = NaN;
     if isempty(cand), return; end
@@ -135,7 +135,7 @@ function [a, b] = pickTwo(cand, seg, len)
     if false, seg = seg; end %#ok<NASGU>
 end
 
-% =====================================================================
+%
 function t = ticksOnSpine(dark, rT, rB, cL, cR, side)
 %TICKSONSPINE  在轴脊内侧找刻线（短线段），返回绝对坐标并去重
     t = [];
@@ -198,7 +198,7 @@ function t = ticksOnSpine(dark, rT, rB, cL, cR, side)
     t = out;
 end
 
-% =====================================================================
+%
 function v = fitTicks(t, step, edgeLo, edgeHi)
 %FITTICKS  把刻线位置拟合成等差数列，外推到轴框两边，返回 [边Lo的值, 边Hi的值]
 %   做法：算相邻间距的中位数 d_px，则 value 每 d_px 走一个 step。
@@ -223,7 +223,7 @@ function v = fitTicks(t, step, edgeLo, edgeHi)
     v = [vAt(edgeLo), vAt(edgeHi)];
 end
 
-% =====================================================================
+%
 function d = medDiff(t)
     if numel(t) < 2, d = NaN; return; end
     x = diff(sort(t(:)));

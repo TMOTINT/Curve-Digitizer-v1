@@ -1,9 +1,9 @@
 function [mk, stat] = detectMarkers(mask, colRange, rowRange, opts)
 %DETECTMARKERS  检测数据点标记（圆点）的中心 —— 交叉验证用的"真值"。
 %
-%   ★ 为什么标记点重要：
+%   为什么标记点重要：
 %   标记点比曲线好认得多（一个圆点在十几列里都很粗，曲线每列只有 2~4 px），
-%   而且它**独立于拟合曲线**：曲线是穿过标记点的拟合线。所以标记点可以
+%   而且它独立于拟合曲线：曲线是穿过标记点的拟合线。所以标记点可以
 %   当作真值，用来交叉验证曲线提取得对不对。
 %
 %   ================== v2：改用 imfindcircles ==================
@@ -16,7 +16,7 @@ function [mk, stat] = detectMarkers(mask, colRange, rowRange, opts)
 %
 %   用法（不变）:
 %     [mk, stat] = detectMarkers(mask, [c0 c1], [r0 r1], opts)
-%     opts.I        灰度或彩色图（**给了才启用圆检测**；不给则走 v1）
+%     opts.I        灰度或彩色图（给了才启用圆检测；不给则走 v1）
 %     opts.minR/maxR  圆半径范围（默认按轴框尺寸自适应）
 %     opts.sens     圆检测灵敏度 0~1（默认 0.88）
 %     opts.excludeRect  要排除的区域（图例框）[x0 y0 x1 y1]
@@ -52,7 +52,7 @@ function [mk, stat] = detectMarkers(mask, colRange, rowRange, opts)
             D = double(opts.I);
             if size(D,3) == 1, G = D; else, G = 0.299*D(:,:,1)+0.587*D(:,:,2)+0.114*D(:,:,3); end
             % 半径范围：论文图的圆点标记直径通常 10~24 px。
-            % ★ imfindcircles 要求半径 > 5，给它 rMin<6 会直接告警并返回空
+            % imfindcircles 要求半径 > 5，给它 rMin<6 会直接告警并返回空
             %   （实测踩过：默认自适应算出 rMin=3，圆检测全程 0 命中）。
             span = max(c1-c0, r1-r0);
             rMin = 6;
@@ -60,11 +60,11 @@ function [mk, stat] = detectMarkers(mask, colRange, rowRange, opts)
             if isfield(opts,'minR'), rMin = max(6, opts.minR); end
             if isfield(opts,'maxR'), rMax = opts.maxR; end
             if rMax <= rMin, rMax = rMin + 6; end
-            % ★ 关键：先用"圆盘腐蚀"把细曲线去掉，只留标记候选。
+            % 关键：先用"圆盘腐蚀"把细曲线去掉，只留标记候选。
             %   为什么必须这么做：给 imfindcircles 的掩膜如果把曲线也算进去，
             %   "圆心挨着掩膜"这种校验就形同虚设 —— 实测曲线上的点会被大量
             %   检成"圆"（X≈3.08 处同时报出 Y=446 和 Y=202）。
-            %   圆点标记是**实心圆盘**（直径 10~24 px），细线（3~5 px）开运算
+            %   圆点标记是实心圆盘（直径 10~24 px），细线（3~5 px）开运算
             %   一下就没了，圆盘还在。腐蚀半径不能太大：取 0.6×最小半径，
             %   实测用 0.8 会把标记本身也消掉（圆检测变成 0 命中）。
             if exist('strel','file') && exist('imopen','file')
@@ -77,8 +77,8 @@ function [mk, stat] = detectMarkers(mask, colRange, rowRange, opts)
                 diskM = ms;
             end
             % 圆度筛选（regionprops 的 Circularity = 4πA/P²，圆≈1）
-            % ★ 必须初始化成 0×2 而不是 []：对 0×0 的空矩阵，
-            %   candBlobs(end+1,:) 里的 end+1 是 **2** 而不是 1，
+            % 必须初始化成 0×2 而不是 []：对 0×0 的空矩阵，
+            %   candBlobs(end+1,:) 里的 end+1 是 2 而不是 1，
             %   赋值直接抛错（然后被外层 catch 吞掉，表现成"永远没有实心块"）。
             candBlobs = zeros(0,2);
             if exist('regionprops','file') && any(diskM(:))
@@ -87,13 +87,13 @@ function [mk, stat] = detectMarkers(mask, colRange, rowRange, opts)
                     if stb(k).Area < 6, continue; end
                     circ = stb(k).Circularity;
                     if ~isfinite(circ) || circ < getf(opts,'minCirc',0.55), continue; end
-                    % ★ regionprops 给的是**区域坐标**，必须加回裁剪偏移
+                    % regionprops 给的是区域坐标，必须加回裁剪偏移
                     %   才能与 imfindcircles 的整图坐标比较。
                     %   实测忘了加偏移时两边差 (c0-1, r0-1)，校验永远 0 通过。
                     candBlobs(end+1,:) = stb(k).Centroid + [c0-1, r0-1]; %#ok<AGROW>
                 end
             end
-            % 圆检测：在**整幅反相灰度**上跑（不要涂白 ROI，会破坏圆边缘）
+            % 圆检测：在整幅反相灰度上跑（不要涂白 ROI，会破坏圆边缘）
             Gi = 255 - G;
             [cent, rad] = imfindcircles(Gi, [rMin rMax], ...
                 'Sensitivity', opts.sens, 'Method', 'PhaseCode', ...
@@ -124,7 +124,7 @@ function [mk, stat] = detectMarkers(mask, colRange, rowRange, opts)
                         dmin = min(sqrt(sum((candBlobs - cent(k,:)).^2, 2)));
                         if dmin <= tolPx, keep(k) = true; end
                         % 可选加严：要求圆周边界有足够覆盖率。
-                        %   ★ 默认关闭：论文图里数据点普遍带**竖直误差棒**，
+                        %   默认关闭：论文图里数据点普遍带竖直误差棒，
                         %   误差棒把圆环切开一段，真标记的覆盖率也只有 ~0.5，
                         %   开这个会把真标记误杀（实测 11 个点只认出 3 个）。
                         if keep(k) && getf(opts,'useRing',false)
@@ -205,7 +205,7 @@ function [mk, stat] = detectMarkers(mask, colRange, rowRange, opts)
     end
 end
 
-% ---------------------------------------------------------------------
+%
 function frac = ringCoverage(ms, cent, rad, c0, r0)
 %RINGCOVERAGE  在半径 rad 的圆周上，有多少比例落在掩膜上
 %   真圆形标记：边界是一整圈 -> 接近 1
@@ -223,13 +223,13 @@ function frac = ringCoverage(ms, cent, rad, c0, r0)
     frac = nnz(ms(sub2ind([H W], ys, xs))) / numel(xs);
 end
 
-% ---------------------------------------------------------------------
+%
 function v = getf(s, f, d)
 %GETF  读结构体字段，缺省则给默认值
     if isstruct(s) && isfield(s,f) && ~isempty(s.(f)), v = s.(f); else, v = d; end
 end
 
-% ---------------------------------------------------------------------
+%
 function c = mergeClose(c, minDist)
 %MERGECLOSE  合并距离过近的圆心（同一圆被检到两次）
     if isempty(c), return; end
