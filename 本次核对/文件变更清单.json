@@ -1,0 +1,44 @@
+{
+  "modified_existing_files": [
+    "curve_extract.m",
+    "digitized_final/fig3B.csv",
+    "digitized_final/fig3B.mat",
+    "digitized_final/fig3B.xlsx",
+    "digitized_final/fig3B_long.csv",
+    "digitized_final/fig3C.csv",
+    "digitized_final/fig3C.mat",
+    "digitized_final/fig3C.xlsx",
+    "digitized_final/fig3C_long.csv",
+    "digitized_final/fig3D.csv",
+    "digitized_final/fig3D.mat",
+    "digitized_final/fig3D.xlsx",
+    "digitized_final/fig3D_long.csv",
+    "digitized_final/fig3E.csv",
+    "digitized_final/fig3E.mat",
+    "digitized_final/fig3E.xlsx",
+    "digitized_final/fig3E_long.csv",
+    "extract_opts.m",
+    "qa/fig3B_overlay.png",
+    "qa/fig3B_render.png",
+    "qa/fig3C_overlay.png",
+    "qa/fig3C_render.png",
+    "qa/fig3D_overlay.png",
+    "qa/fig3D_render.png",
+    "qa/fig3E_overlay.png",
+    "qa/fig3E_render.png",
+    "qa/linegap_fig3B.png",
+    "qa/linegap_fig3C.png",
+    "qa/linegap_fig3D.png",
+    "qa/linegap_fig3E.png"
+  ],
+  "modified_existing_code": [
+    "curve_extract.m",
+    "extract_opts.m"
+  ],
+  "added_algorithm": "targeted_trace.m",
+  "unchanged_panels": [
+    "fig2E",
+    "fig3A",
+    "fig3F"
+  ]
+}
