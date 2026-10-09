@@ -1,6 +1,6 @@
 
 function t_scale()
-%T_SCALE  不同分辨率下的鲁棒性（界面会加载 图片/ 里的原图，尺寸与 data/ 不同）
+%T_SCALE  使用示例图的不同缩放比例检查提取结果。
 here = fileparts(mfilename('fullpath')); cd(here);
 S = fig_specs_v2();
 BLK = struct('fig2E',[1090 1270 860 2080],'fig3B',[840 1250 1220 2226], ...

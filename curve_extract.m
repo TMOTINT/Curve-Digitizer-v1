@@ -165,6 +165,9 @@ for j = sel
       sm = opt.smooth; sm.wLine = ctx.wLine;      % 厚度置信度需要实测线宽
       rs2 = snake_smooth(cs2, rs2, I, sm);
    end
+   if isfield(opt,'blackCenter') && opt.blackCenter
+      rs2 = black_stroke_center(I,cs2,rs2,fr1);
+   end
    Pj = [cs2 rs2];
    X = (Pj(:,1) - fr1(3))*(rg1(2)-rg1(1))/(fr1(4)-fr1(3)) + rg1(1);
    Y = rg1(4) - (Pj(:,2) - fr1(1))*(rg1(4)-rg1(3))/(fr1(2)-fr1(1));

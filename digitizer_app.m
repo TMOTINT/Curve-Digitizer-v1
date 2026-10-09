@@ -33,8 +33,7 @@ function digitizer_app
     root.ColumnSpacing = 8; root.RowSpacing = 6;
 
     % ---------------- 左列：控制 ----------------
-    % 行高按"实测控件高度"分配：uibutton 自然高 22~24 px，留 26 px 就有余量；
-    % 之前给 30 px 加上 uipanel 的标题条，总需求超过窗口高度，导致末尾被压扁遮挡。
+    % 固定控件行高，为底部日志保留空间。
     leftCol = uigridlayout(root, [4 1]);
     leftCol.Layout.Row = 1; leftCol.Layout.Column = 1;
     leftCol.RowHeight = {'fit', 'fit', 'fit', '1x'};
@@ -49,7 +48,7 @@ function digitizer_app
     bPng = uibutton(g1,'Text','载入图片（用完整图，不需节选）','FontSize',11, ...
         'ButtonPushedFcn',@(s,e) onPickImage());
     bPng.Layout.Row=2;
-    bPdf = uibutton(g1,'Text','从 PDF 抽矢量曲线（精度最高）','FontSize',11, ...
+    bPdf = uibutton(g1,'Text','从 PDF 抽取矢量曲线','FontSize',11, ...
         'ButtonPushedFcn',@(s,e) onPickPdf());
     bPdf.Layout.Row=3;
 
@@ -67,8 +66,7 @@ function digitizer_app
     lblCal.Layout.Row=3;
 
     % 卡片3 数据系列
-    % 注：已按需求移除"读取图例名称与单位(OCR)"这一步 —— 名称与单位
-    % 在导出时由用户手工填写（更可靠，也不再依赖 OCR）。
+    % 曲线名称和单位在导出时手工填写。
     p3 = uipanel(leftCol,'Title',' 3. 数据系列 ','FontSize',12,'FontWeight','bold');
     g3 = uigridlayout(p3,[5 1]); g3.RowHeight={26,26,18,26,110};
     g3.Padding=[8 6 8 6]; g3.RowSpacing=3;
@@ -111,18 +109,22 @@ function digitizer_app
     % ---------------- 右列：预览 ----------------
     pPrev = uipanel(root,'Title',' 预览（取点就在这里点击）','FontSize',13,'FontWeight','bold');
     pPrev.Layout.Row=1; pPrev.Layout.Column=[2 3];
-    gp = uigridlayout(pPrev,[2 1]); gp.Padding=[4 4 4 4];
-    gp.RowHeight={30,'1x'};
-    verifyBar=uigridlayout(gp,[1 4]);verifyBar.Layout.Row=1;
-    verifyBar.ColumnWidth={100,125,100,'1x'};verifyBar.Padding=[0 0 0 0];
+    gp = uigridlayout(pPrev,[3 1]); gp.Padding=[4 4 4 4];
+    gp.RowHeight={30,40,'1x'};
+    verifyBar=uigridlayout(gp,[1 5]);verifyBar.Layout.Row=1;
+    verifyBar.ColumnWidth={90,125,95,90,'1x'};verifyBar.Padding=[0 0 0 0];
     uibutton(verifyBar,'Text','重叠验证','Tag','OverlayVerify', ...
         'ButtonPushedFcn',@(s,e) onVerify());
     chkOverlay=uicheckbox(verifyBar,'Text','显示提取曲线','Value',true, ...
         'Tag','OverlayToggle','ValueChangedFcn',@(s,e) onOverlayToggle());
+    chkError=uicheckbox(verifyBar,'Text','显示误差','Value',false, ...
+        'Tag','ErrorToggle','ValueChangedFcn',@(s,e) onErrorToggle());
     uibutton(verifyBar,'Text','数据曲线','Tag','DataPlot', ...
         'ButtonPushedFcn',@(s,e) onDataPlot());
     uilabel(verifyBar,'Text','青色细线为提取结果；可缩放查看','FontSize',11);
-    axP = uiaxes(gp,'Tag','OverlayAxes');axP.Layout.Row=2;
+    lblError=uilabel(gp,'Text','图像贴线偏差（像素）：勾选“显示误差”查看', ...
+        'Tag','ErrorSummary','WordWrap','on','FontSize',11);lblError.Layout.Row=2;
+    axP = uiaxes(gp,'Tag','OverlayAxes');axP.Layout.Row=3;
     axP.XTick=[]; axP.YTick=[]; axP.Box='on';
     axP.ButtonDownFcn = @(s,e) onAxesClick();
     title(axP,'尚未载入图片');
@@ -229,6 +231,9 @@ function digitizer_app
         end
     end
     function showImg(I, ttl)
+        chkError.Value=false;
+        if isappdata(fig,'CurveDigitizerErrors'),rmappdata(fig,'CurveDigitizerErrors');end
+        lblError.Text='图像贴线偏差（像素）：勾选“显示误差”查看';
         cla(axP);
         hIm = image(axP, I);
         % 关键：uiaxes 上点击图像时，事件命中的是 image 对象而不是 axes，
@@ -535,7 +540,7 @@ function digitizer_app
         S.ax=[]; S.cal=[]; S.lab=[]; S.curves=[]; S.mode='idle'; S.unitAsked=false;
         setS(S);
         showImg(S.I, sprintf('%s  (%d×%d)', nm, size(I,2), size(I,1)));
-        say(sprintf('已载入 %s（%d×%d）。多面板图请先点"② 框选面板"。', ...
+        say(sprintf('已载入 %s（%d×%d）。多面板图请先在外部裁成单幅。', ...
             nm, size(I,2), size(I,1)), 'ok');
     end
 
@@ -592,7 +597,7 @@ function digitizer_app
     end
 
     function startPanelPick()
-        % 已按用户要求取消"图片节选"：直接使用完整图片。
+        % 使用完整的单幅图片。
         % 保留本函数只为兼容旧调用；现在它只做一次"确认用整图"的提示。
         S = st();
         if ~needImage(S), return; end
@@ -1156,7 +1161,7 @@ function digitizer_app
             if Rk.found
                 % ---- 已知单幅图：与 digitize_final 完全同配方 ----
                 % 自动多列播种 + 表里实测的期望条数 + 实测轴框/量程/遮挡框
-                % -> 界面结果与我给你的核对图逐点一致
+                % 与批处理使用相同的提取参数。
                 nExp2 = Rk.nExpect;
                 say(sprintf('按 digitize_final 同配方提取（%s，%d 条）…', Rk.tag, nExp2),'act');
             else
@@ -1320,7 +1325,7 @@ function digitizer_app
                             % 判据用中位差：最大差会被个别陡沿/断点/误差棒处的单点拉爆，
                             % 用它当门槛会误报（实测四对里三对差 <0.2 nm，最大差却有 97 px）。
                             if ncmp == 0
-                                say('⚠ 自检：没有可比对的点（曲线为空或全 NaN）—— 预览必然空白，请把日志发我','warn');
+                                say('⚠ 自检：没有可比对的点（曲线为空或全 NaN）—— 预览无有效曲线，请检查日志与标定','warn');
                             elseif median(dAll) / max(1e-12, rg2(4)-rg2(3)) < 0.001
                                 extra = '';
                                 if nbad > 0
@@ -1376,9 +1381,7 @@ function digitizer_app
         else
             say(sprintf('提取完成：%d 条；整体判定 %s', numel(R.curves), R.verdict),'ok');
         end
-        % 数据已经拿到手了，后面的画图万一出错不能反过来把"提取成功"这件事
-        % 说成失败。以前 onVerify 放在同一个 try 里，画图一抛异常用户就看到
-        % "提取失败"，而实际上数据是好的 —— 这正是"分离完却读取不到"的假象。
+        % 预览异常不影响已经提取的数据和导出操作。
         try
             onVerify();
         catch ME
@@ -1534,7 +1537,7 @@ function digitizer_app
         chkOverlay.Value=true;drawnow;
         if ndrawn == 0
             say(sprintf(['⚠ 预览：%d 条曲线都没画出来（有效点数 %s；第1条反算像素 X[%.0f %.0f] Y[%.0f %.0f]，图 %dx%d）' ...
-                '—— 请把日志发我'], numel(S.curves), mat2str(npts), rng1, size(S.I,2), size(S.I,1)), 'warn');
+                '—— 请查看日志中的标定和像素范围'], numel(S.curves), mat2str(npts), rng1, size(S.I,2), size(S.I,1)), 'warn');
         else
             say(sprintf('预览已更新：画出 %d/%d 条（有效点数 %s）。右侧青色细线为提取结果，可取消“显示提取曲线”对比原图。', ...
                 ndrawn, numel(S.curves), mat2str(npts)),'ok');
@@ -1542,9 +1545,59 @@ function digitizer_app
     end
 
     function onOverlayToggle()
-        visible='off';if chkOverlay.Value,visible='on';end
+        visible='off';if chkOverlay.Value && ~chkError.Value,visible='on';end
         set(findobj(axP,'Tag','ExtractedOverlay'),'Visible',visible);
+        visible='off';if chkOverlay.Value && chkError.Value,visible='on';end
+        set(findobj(axP,'Tag','ErrorOverlay'),'Visible',visible);
         drawnow;
+    end
+
+    function onErrorToggle()
+        if ~chkError.Value,onOverlayToggle();return;end
+        S=st();
+        if isempty(S.curves)||~okCal(S.cal)
+            chkError.Value=false;uialert(fig,'请先完成标定和曲线提取','显示误差');return;
+        end
+        if isempty(findobj(axP,'Tag','ExtractedOverlay'))
+            onVerify();chkError.Value=true;
+        end
+        px=cell(1,numel(S.curves));py=px;colors=zeros(numel(px),3);
+        for k=1:numel(px)
+            px{k}=(S.curves(k).X-S.cal.xFromPx(0))/(S.cal.xFromPx(1)-S.cal.xFromPx(0));
+            py{k}=(S.curves(k).Y-S.cal.yFromPx(0))/(S.cal.yFromPx(1)-S.cal.yFromPx(0));
+            if isfield(S.curves,'color'),colors(k,:)=255*S.curves(k).color;
+            elseif isfield(S.curves,'core'),colors(k,:)=S.curves(k).core;end
+        end
+        fr=[1 size(S.I,1) 1 size(S.I,2)];
+        if ~isempty(S.ax),fr=[S.ax.rowTop S.ax.rowBottom S.ax.colLeft S.ax.colRight];end
+        R=panel_ref(S.imageFile,S.I);tag='';block=[];
+        if R.found
+            tag=R.tag;block=R.block;
+            if ~isempty(block)&&~isempty(R.refSize)
+                scale=[size(S.I,1)/R.refSize(1) size(S.I,2)/R.refSize(2)];
+                block=block.*[scale(1) scale(1) scale(2) scale(2)];
+            end
+        end
+        report=curve_image_error(S.I,px,py,colors,fr,block,tag);
+        setappdata(fig,'CurveDigitizerErrors',report);
+        delete(findobj(axP,'Tag','ErrorOverlay'));hold(axP,'on');
+        for k=1:numel(px)
+            e=report.errors{k};rgb=repmat([.5 .5 .5],numel(e),1);
+            rgb(isfinite(e)&e<=.5,:)=repmat([0 .7 .15],nnz(isfinite(e)&e<=.5),1);
+            rgb(isfinite(e)&e>.5&e<=1.5,:)=repmat([.95 .65 0],nnz(isfinite(e)&e>.5&e<=1.5),1);
+            rgb(isfinite(e)&e>1.5,:)=repmat([.95 .1 .1],nnz(isfinite(e)&e>1.5),1);
+            scatter(axP,px{k},py{k},5,rgb,'filled','Tag','ErrorOverlay', ...
+                'HitTest','off','PickableParts','none');
+        end
+        hold(axP,'off');chkOverlay.Value=true;onOverlayToggle();
+        legendText='绿 ≤0.5 px | 黄 ≤1.5 px | 红 >1.5 px | 灰：遮挡/无可靠笔画';
+        if report.nMeasured==0
+            lblError.Text=['图像贴线偏差：无可判定点。' newline legendText];
+        else
+            lblError.Text=sprintf('图像贴线偏差：中位 %.2f px | P95 %.2f px | 最大 %.2f px | 可判定 %d/%d 点\n%s', ...
+                report.median,report.p95,report.maximum,report.nMeasured,report.nTotal,legendText);
+        end
+        say('误差显示已更新：像素偏差按颜色标记，灰色点不计入统计。','ok');
     end
 
     function onDataPlot()
@@ -1566,9 +1619,7 @@ function digitizer_app
                     ternStr(S.lab.axis.y.unit,''));
             end
             xlabel(xlab); ylabel(ylab);
-            % S.curves 是结构体数组，取名字必须用 {S.curves.name} 组成 cell；
-            % 直接写 S.curves.name 得到的是逗号分隔列表，legend 会报
-            % "无效的字段值" —— 之前画验证图会在这里崩。
+            % 结构体数组的曲线名称转换为 cell 后传给 legend。
             legend({S.curves.name},'Location','best','Interpreter','none');
             tt = '提取结果';
             if isfield(S,'verdict') && strcmp(S.verdict,'suspect')
@@ -1603,7 +1654,7 @@ function digitizer_app
         S = st();
         if isempty(S.curves), uialert(fig,'请先完成"⑥ 自动分离曲线"','提示'); return; end
         if ~okCal(S.cal), uialert(fig,'请先完成"④ 标定"','提示'); return; end
-        % 名称与单位全部由用户在此填写（已移除 OCR 读图例那一步）
+        % 名称与单位由用户填写。
         xT='X'; xU=''; yT='Y'; yU='';
         if ~isempty(S.lab) && isfield(S.lab,'axis')   % 标定时已填过名称/单位 -> 默认沿用
             xT = ternStr(S.lab.axis.x.title,'X'); xU = ternStr(S.lab.axis.x.unit,'');
@@ -1685,7 +1736,7 @@ function digitizer_app
     end
 
     setS(ST);
-    say(['就绪。建议顺序：载入图片 → 框选面板 → 确认轴框 → ' ...
+    say(['就绪。建议顺序：载入单幅图片 → 确认轴框 → ' ...
          '标定（只填图上的坐标范围）→ 分离曲线 → 预览验证 → 导出。']);
 end
 
@@ -1829,8 +1880,8 @@ function n = writeOutputs(curves, lab, outPrefix, srcFile, cal, ax)
     end
     fprintf(fid,'\n方法与误差：\n');
     fprintf(fid,'  取点方式：颜色感知全局 DP（混色似然 + 抛物线下包络 + 最大覆盖选路 + 漏检回收）\n');
-    fprintf(fid,'  名称单位：OCR 自动识别，经人工确认\n');
-    fprintf(fid,'  定位精度：路径居中中位偏差约 0.5 px；标定经 x=0/y=0 虚线独立校验，误差 <0.2%% 量程\n');
+    fprintf(fid,'  名称单位：用户填写\n');
+    fprintf(fid,'  误差说明：受图像分辨率、线宽、遮挡和坐标标定影响；请检查原图叠加与像素偏差\n');
     fprintf(fid,'  引用时请注明"数据由图示数字化得到"\n');
     fclose(fid);
     n = n+1;
@@ -1917,7 +1968,7 @@ end
             S.mapX = @(px) fr(3) + (px - refF(3)) * (fr(4)-fr(3)) / max(1e-9, refF(4)-refF(3));
             S.mapY = @(py) fr(1) + (py - refF(1)) * (fr(2)-fr(1)) / max(1e-9, refF(2)-refF(1));
             % 本图实测轴框：先测出来并记入日志；但只有"非等比(裁剪过)"才采用它，
-            % 因为纯等比图的缩放框源自我标定过的亚像素轴脊中心，比自动检测更准。
+            % 因为纯等比图的缩放框源自预设的亚像素轴脊中心，比自动检测更准。
             % 同时把两个数与差值都写进日志 —— 以后再出问题，日志里直接能看到。
             axD = [];
             try

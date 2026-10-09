@@ -114,7 +114,7 @@ function [sd, refCol] = pickSeedFromMask(D, mask, r0, r1, c0, c1)
 %     前面每提走一条曲线，都会把它经过的列全部挖掉（几何挖除）。
 %     所以"残余掩膜里最靠左的列"必然不在任何已提路径的覆盖范围内 ——
 %     种子一定属于一条还没提过的曲线。
-%     之前用"某列像素最多"来挑，会反复挑到同一列，导致死循环。
+%     避免反复在相同列播种。
     sd = []; refCol = [];
     colCount = sum(mask(r0:r1, c0:c1), 1);
     nz = find(colCount > 0);

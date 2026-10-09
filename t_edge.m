@@ -28,7 +28,7 @@ ok(isempty(C), sprintf('全白图提取: %d 条 (应 0)', numel(C)));
 C0 = curve_extract(I, S(iA).frame, S(iA).range, 0, struct());
 ok(isempty(C0), sprintf('nExpect=0: %d 条 (应 0)', numel(C0)));
 
-fprintf('--- 不同分辨率的图（界面常见：图片/ 里的原图比 data/ 大）---\n');
+fprintf('--- 不同分辨率的图（缩放 data/ 中的示例）---\n');
 Ih = imresize(I, 0.62);
 sc = size(Ih,1)/size(I,1);
 frS = round(S(iA).frame .* [sc sc sc sc]);

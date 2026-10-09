@@ -37,7 +37,7 @@ function items = ocrLineByLine(I, band, opts)
 
     % 水平膨胀，把同一行里相邻的词连起来。
     % 核宽必须自适应：字间距随字号缩放，固定核宽在"刻度数字 + 标题"挨得近时
-    % 会把两行粘成一块，块高超过上限就被整块丢掉（这是之前轴标题读不到的根因）。
+    % 会合并相邻文本行，导致整块超过高度阈值而被丢弃。
     rowInk = sum(ink, 2);
     nz = rowInk(rowInk > 0);
     if isempty(nz)
