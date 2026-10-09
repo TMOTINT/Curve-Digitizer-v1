@@ -1,0 +1,7 @@
+_app_log.txt
+*.asv
+*.m~
+*.log
+qa/*
+!qa/.gitkeep
+output/
